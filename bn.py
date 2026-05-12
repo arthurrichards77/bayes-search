@@ -8,6 +8,9 @@ Simple Bayesian network handling
 import pandas as pd
 from math import prod
 
+def close_to(a,b,tol=1e-10):
+    return abs(a-b)<tol
+
 def validate_pdf_size(pdf):
     assert len(pdf)==prod([(len(pdf.drop('prob',axis=1).drop_duplicates(col))) for col in pdf.drop('prob',axis=1).columns])
 
@@ -15,14 +18,14 @@ def validate_pdf(pdf, tol=1e-10, all_combinations=False):
     if all_combinations:
         validate_pdf_size(pdf)
     total_prob = sum(pdf['prob'])
-    assert abs(total_prob-1.0)<tol, f'Probability sums to {total_prob}'
+    assert close_to(total_prob,1.0), f'Probability sums to {total_prob}'
 
 def validate_cpdf(cpdf, all_combinations=True):
     if all_combinations:
         validate_pdf_size(cpdf)
     givens = [c for c in cpdf.columns if c.startswith('|')]
     for i,r in cpdf[givens].drop_duplicates().iterrows():
-        assert sum(cpdf[cpdf.eq(r)[givens].all(axis=1)]['prob'])==1
+        assert close_to(sum(cpdf[cpdf.eq(r)[givens].all(axis=1)]['prob']),1.0)
 
 def joint_pdf_independent(pdf1,pdf2,prune=True):
     jpdf = pd.merge(pdf1,pdf2,how='cross')
